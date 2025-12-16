@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 from typing import Literal, TypedDict, Optional, List, Annotated
-from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage, AIMessage, AnyMessage
+from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.types import interrupt
 from langgraph.graph import END, START, StateGraph
-# Note: When using LangGraph Platform (langgraph dev), checkpointing is handled automatically
-from operator import add
+from langgraph.graph.message import add_messages
 
 load_dotenv()
 
@@ -14,7 +14,7 @@ load_dotenv()
 # LLM Configuration
 # =============================================================================
 
-MODEL_NAME = "gpt-4o-mini"
+MODEL_NAME = "gpt-4o"
 
 llm = ChatOpenAI(model=MODEL_NAME, temperature=0.7)
 
@@ -39,9 +39,8 @@ class Track(TypedDict):
 
 
 class DJState(TypedDict, total=False):
-    # Input
-    user_input: str
-    messages: Annotated[List[BaseMessage], add]  # Conversation history
+    # Conversation history (user messages arrive via add_messages reducer)
+    messages: Annotated[list[AnyMessage], add_messages]
 
     # Classification
     classification: ChatClassification
@@ -66,29 +65,28 @@ class DJState(TypedDict, total=False):
 # =============================================================================
 
 def classify_intent(state: DJState) -> dict:
-    """Use LLM to classify user's intent"""
+    """Use LLM to classify user's intent based on conversation history"""
 
     structured_llm = llm.with_structured_output(ChatClassification)
 
-    messages = [
-        SystemMessage(content="""You are classifying chat messages for a DJ assistant.
+    system_msg = SystemMessage(content="""You are classifying chat messages for a DJ assistant.
+Consider the full conversation context when classifying the user's latest message.
+
 Classify the user's intent into one of these categories:
 - greeting: User is saying hello or opening the conversation
 - ask_question: User is asking a general question about music
 - explore: User wants to explore music but hasn't decided what
-- request_playlist: User is clearly asking for a playlist
+- request_playlist: User is clearly asking for a playlist (including follow-ups like "yes make it" after discussing music)
 - unknown: Intent is unclear
 
-Return intent, confidence (0.0–1.0), and any relevant signals (mood, genre, etc.)."""),
-        HumanMessage(content=state["user_input"]),
-    ]
+Return intent, confidence (0.0–1.0), and any relevant signals (mood, genre, etc.).""")
+    
+    # Include conversation history for context-aware classification
+    messages = [system_msg] + list(state.get("messages", []))
 
     classification = structured_llm.invoke(messages, config=LLM_CONFIG)
 
-    return {
-        "classification": classification,
-        "messages": [HumanMessage(content=state["user_input"])],
-    }
+    return {"classification": classification}
 
 
 # =============================================================================
@@ -139,12 +137,12 @@ def route_by_action(state: DJState) -> str:
 def handle_chat(state: DJState) -> dict:
     """Handle general chat/greeting/questions"""
 
-    messages = [
-        SystemMessage(content="""You are a friendly underground DJ with deep knowledge of music.
+    system_msg = SystemMessage(content="""You are a friendly underground DJ with deep knowledge of music.
 Keep responses short and warm. If appropriate, invite the user to talk about music.
-Don't be pushy about playlists - just be a good conversationalist about music."""),
-        HumanMessage(content=state["user_input"]),
-    ]
+Don't be pushy about playlists - just be a good conversationalist about music.""")
+    
+    # Include full conversation history
+    messages = [system_msg] + list(state.get("messages", []))
 
     response = llm.invoke(messages, config=LLM_CONFIG)
 
@@ -165,8 +163,7 @@ def handle_clarify(state: DJState) -> dict:
 
     signals = state["classification"].get("signals", {})
 
-    messages = [
-        SystemMessage(content=f"""You are an underground DJ helping someone discover what they want.
+    system_msg = SystemMessage(content=f"""You are an underground DJ helping someone discover what they want.
 The user seems interested in music but hasn't given enough detail.
 Known signals: {signals}
 
@@ -176,9 +173,10 @@ Examples of good questions:
 - "Any artists you've been into lately?"
 - "What are you doing while listening - working, driving, party?"
 
-Keep it casual and short. Don't list too many options."""),
-        HumanMessage(content=state["user_input"]),
-    ]
+Keep it casual and short. Don't list too many options.""")
+    
+    # Include full conversation history
+    messages = [system_msg] + list(state.get("messages", []))
 
     response = llm.invoke(messages, config=LLM_CONFIG)
 
@@ -204,8 +202,9 @@ def handle_generate_playlist(state: DJState) -> dict:
 
     structured_llm = llm.with_structured_output(PlaylistProposal)
 
-    messages = [
-        SystemMessage(content="""You are an underground DJ creating a playlist.
+    system_msg = SystemMessage(content="""You are an underground DJ creating a playlist.
+
+Based on the conversation so far, create a playlist that matches what the user is looking for.
 
 Rules:
 - 3 tracks exactly
@@ -213,9 +212,10 @@ Rules:
 - Include a mix that flows well together
 - Each track needs: artist, title (no spotify_uri yet)
 
-Also provide a short "vibe_description" (one sentence) capturing the mood."""),
-        HumanMessage(content=f"Create a playlist for: {state['user_input']}"),
-    ]
+Also provide a short "vibe_description" (one sentence) capturing the mood.""")
+    
+    # Include full conversation history for context
+    messages = [system_msg] + list(state.get("messages", []))
 
     proposal = structured_llm.invoke(messages, config=LLM_CONFIG)
 
@@ -402,4 +402,9 @@ builder.add_edge("playlist_declined", END)
 
 # Compile the graph
 # Note: LangGraph Platform handles checkpointing automatically
-graph = builder.compile()
+# Add metadata to all nodes - metadata is inherited by all child runnables
+graph = builder.compile().with_config(
+    RunnableConfig(
+        metadata={"model": MODEL_NAME, "ls_model_name": MODEL_NAME, "ls_provider": "openai"}
+    )
+)
