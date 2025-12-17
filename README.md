@@ -1,17 +1,20 @@
-# New LangGraph Project
+# DJ Agent
 
-[![CI](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/unit-tests.yml)
-[![Integration Tests](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/integration-tests.yml)
+A LangGraph-based DJ assistant that helps users discover music and create playlists.
 
-This template demonstrates a simple application implemented using [LangGraph](https://github.com/langchain-ai/langgraph), designed for showing how to get started with [LangGraph Server](https://langchain-ai.github.io/langgraph/concepts/langgraph_server/#langgraph-server) and using [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/), a visual debugging IDE.
+## Graph Overview
+
+The graph uses a **routing pattern** to classify user intent and route to appropriate handlers:
+
+1. **Classify Intent**: LLM classifies user messages (greeting, question, explore, request_playlist)
+2. **Decide Action**: Routes based on intent and confidence to:
+   - **Chat**: General conversation about music
+   - **Clarify**: Ask questions to understand preferences
+   - **Generate Playlist**: Create playlist proposal → confirm → search Spotify → create playlist
 
 <div align="center">
-  <img src="./static/studio_ui.png" alt="Graph view in LangGraph studio UI" width="75%" />
+  <img src="./graph.png" alt="DJ Agent Graph" width="75%" />
 </div>
-
-The core logic defined in `src/agent/graph.py`, showcases an single-step application that responds with a fixed string and the configuration provided.
-
-You can extend this graph to orchestrate more complex agentic workflows that can be visualized and debugged in LangGraph Studio.
 
 ## Getting Started
 
@@ -58,4 +61,3 @@ Follow-up requests extend the same thread. You can create an entirely new thread
 For more advanced features and examples, refer to the [LangGraph documentation](https://langchain-ai.github.io/langgraph/). These resources can help you adapt this template for your specific use case and build more sophisticated conversational agents.
 
 LangGraph Studio also integrates with [LangSmith](https://smith.langchain.com/) for more in-depth tracing and collaboration with teammates, allowing you to analyze and optimize your chatbot's performance.
-
