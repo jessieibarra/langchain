@@ -15,7 +15,7 @@ Usage:
 import argparse
 from langsmith import evaluate
 from agent.graph import graph
-from agent.evaluators import playlist_quality, conversation_tone, classification_accuracy
+from agent.evaluators import playlist_quality, conversation_tone
 
 
 def target(inputs: dict) -> dict:
@@ -25,11 +25,10 @@ def target(inputs: dict) -> dict:
 
 # Define evaluation suites
 EVALUATION_SUITES = {
-    "all": [playlist_quality, conversation_tone, classification_accuracy],
+    "all": [playlist_quality, conversation_tone],
     "playlist": [playlist_quality],
     "tone": [conversation_tone],
-    "classification": [classification_accuracy],
-    "combined": [playlist_quality, conversation_tone, classification_accuracy],  # alias for "all"
+    "combined": [playlist_quality, conversation_tone],  # alias for "all"
 }
 
 
@@ -52,7 +51,7 @@ def main():
         "--evaluators",
         type=str,
         nargs="+",
-        choices=["playlist_quality", "conversation_tone", "classification_accuracy"],
+        choices=["playlist_quality", "conversation_tone"],
         help="Specific evaluators to run (overrides --suite)",
     )
     parser.add_argument(
@@ -81,7 +80,6 @@ def main():
         evaluator_map = {
             "playlist_quality": playlist_quality,
             "conversation_tone": conversation_tone,
-            "classification_accuracy": classification_accuracy,
         }
         evaluators = [evaluator_map[e] for e in args.evaluators]
         suite_name = "-".join(args.evaluators)

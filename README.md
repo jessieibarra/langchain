@@ -12,10 +12,6 @@ The graph uses a **routing pattern** to classify user intent and route to approp
    - **Clarify**: Ask questions to understand preferences
    - **Generate Playlist**: Create playlist proposal → confirm → search Spotify → create playlist
 
-<div align="center">
-  <img src="./graph.png" alt="DJ Agent Graph" width="75%" />
-</div>
-
 ## Getting Started
 
 1. Install dependencies, along with the [LangGraph CLI](https://langchain-ai.github.io/langgraph/concepts/langgraph_cli/), which will be used to run the server.
