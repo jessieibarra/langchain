@@ -1,41 +1,34 @@
 """
-DJ Agent Evaluation: playlist quality (LLM-as-judge)
+Playlist quality evaluator - LLM-as-judge for playlist recommendations.
 """
 
-from langsmith import evaluate
 from openai import OpenAI
-from agent.graph import graph
 
 client = OpenAI()
-
-
-def target(inputs: dict) -> dict:
-    """Run the graph with dataset inputs."""
-    return graph.invoke(inputs)
 
 
 def playlist_quality(inputs: dict, outputs: dict) -> dict:
     """
     LLM-as-judge evaluator for playlist quality.
-    
+
     Judges whether the proposed playlist matches the user's request
     based purely on the conversation and output.
     """
     # Get conversation context
     messages = inputs.get("messages", [])
     conversation = "\n".join(
-        f"{m.get('role', 'unknown')}: {m.get('content', '')}" 
+        f"{m.get('role', 'unknown')}: {m.get('content', '')}"
         for m in messages
     )
-    
+
     # Get proposed tracks
     tracks = outputs.get("proposed_tracks", [])
     if not tracks:
         return {"key": "playlist_quality", "score": 0, "comment": "No playlist generated"}
-    
+
     track_list = "\n".join(f"- {t['artist']} – {t['title']}" for t in tracks)
     vibe = outputs.get("response", "")
-    
+
     prompt = f"""You are evaluating a DJ's playlist recommendation.
 
 CONVERSATION:
@@ -59,8 +52,7 @@ Respond with ONLY a JSON object:
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
     )
-    
-    # Parse response
+
     import json
     try:
         result = json.loads(response.choices[0].message.content)
@@ -71,14 +63,4 @@ Respond with ONLY a JSON object:
         }
     except:
         return {"key": "playlist_quality", "score": 0, "comment": "Failed to parse judge response"}
-
-
-if __name__ == "__main__":
-    results = evaluate(
-        target,
-        data="dj-agent-golden-dataset",
-        evaluators=[playlist_quality],
-        experiment_prefix="dj-playlist-quality",
-    )
-    print(results)
 

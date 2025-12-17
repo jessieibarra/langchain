@@ -1,23 +1,16 @@
 """
-DJ Agent Evaluation: conversation tone (LLM-as-judge)
+Conversation tone evaluator - LLM-as-judge for DJ conversation style.
 """
 
-from langsmith import evaluate
 from openai import OpenAI
-from agent.graph import graph
 
 client = OpenAI()
-
-
-def target(inputs: dict) -> dict:
-    """Run the graph with dataset inputs."""
-    return graph.invoke(inputs)
 
 
 def conversation_tone(inputs: dict, outputs: dict) -> dict:
     """
     LLM-as-judge evaluator for DJ conversation tone.
-    
+
     The DJ should be: friendly, knowledgeable, casual, not pushy,
     like an underground DJ friend who knows their stuff.
     """
@@ -25,12 +18,12 @@ def conversation_tone(inputs: dict, outputs: dict) -> dict:
     response = outputs.get("response", "")
     if not response:
         return {"key": "conversation_tone", "score": 0, "comment": "No response"}
-    
+
     prompt = f"""You are evaluating a DJ assistant's conversational tone.
 
 The DJ should sound like a friendly underground DJ friend:
 - Knowledgeable about music but not pretentious
-- Warm and casual, not corporate or robotic  
+- Warm and casual, not corporate or robotic
 - Enthusiastic without being over-the-top
 - Helpful without being pushy about playlists
 
@@ -50,7 +43,7 @@ Respond with ONLY a JSON object:
         messages=[{"role": "user", "content": prompt}],
         temperature=0,
     )
-    
+
     import json
     try:
         parsed = json.loads(result.choices[0].message.content)
@@ -61,14 +54,4 @@ Respond with ONLY a JSON object:
         }
     except:
         return {"key": "conversation_tone", "score": 0, "comment": "Failed to parse"}
-
-
-if __name__ == "__main__":
-    results = evaluate(
-        target,
-        data="dj-agent-golden-dataset",
-        evaluators=[conversation_tone],
-        experiment_prefix="dj-tone",
-    )
-    print(results)
 

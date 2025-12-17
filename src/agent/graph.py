@@ -80,7 +80,7 @@ Classify the user's intent into one of these categories:
 - unknown: Intent is unclear
 
 Return intent, confidence (0.0–1.0), and any relevant signals (mood, genre, etc.).""")
-    
+
     # Include conversation history for context-aware classification
     messages = [system_msg] + list(state.get("messages", []))
 
@@ -140,7 +140,7 @@ def handle_chat(state: DJState) -> dict:
     system_msg = SystemMessage(content="""You are a friendly underground DJ with deep knowledge of music.
 Keep responses short and warm. If appropriate, invite the user to talk about music.
 Don't be pushy about playlists - just be a good conversationalist about music.""")
-    
+
     # Include full conversation history
     messages = [system_msg] + list(state.get("messages", []))
 
@@ -174,7 +174,7 @@ Examples of good questions:
 - "What are you doing while listening - working, driving, party?"
 
 Keep it casual and short. Don't list too many options.""")
-    
+
     # Include full conversation history
     messages = [system_msg] + list(state.get("messages", []))
 
@@ -213,7 +213,7 @@ Rules:
 - Each track needs: artist, title (no spotify_uri yet)
 
 Also provide a short "vibe_description" (one sentence) capturing the mood.""")
-    
+
     # Include full conversation history for context
     messages = [system_msg] + list(state.get("messages", []))
 
