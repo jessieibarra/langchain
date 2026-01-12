@@ -1,6 +1,10 @@
 {
   "$schema": "https://langgra.ph/schema.json",
-  "dependencies": ["."],
+  "dependencies": [ 
+    "python-dotenv",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langgraph>=0.3.0"],
   "graphs": {
     "agent": "./src/agent/graph.py:graph"
   },
