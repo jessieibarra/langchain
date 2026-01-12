@@ -1,4 +1,5 @@
 {
+  "pythonpath": ["src"], 
   "$schema": "https://langgra.ph/schema.json",
   "dependencies": [ 
     "python-dotenv",
@@ -6,7 +7,7 @@
     "langchain-openai>=0.2.0",
     "langgraph>=0.3.0"],
   "graphs": {
-    "agent": "src.agent.graph:graph"
+    "agent": "agent.graph:graph"
   },
   "env": ".env",
   "image_distro": "wolfi"
