@@ -1,7 +1,7 @@
 {
   "$schema": "https://langgra.ph/schema.json",
   "dependencies": [ 
-    "./src"
+    "./src",
     "python-dotenv",
     "langchain-core>=0.3.0",
     "langchain-openai>=0.2.0",
