@@ -6,8 +6,9 @@
     "langchain-core>=0.3.0",
     "langchain-openai>=0.2.0",
     "langgraph>=0.3.0"],
+  "pythonpath": ["src"],
   "graphs": {
-    "agent": "src.agent.graph:graph"
+    "agent": "agent.graph:graph"
   },
   "env": ".env",
   "image_distro": "wolfi"
